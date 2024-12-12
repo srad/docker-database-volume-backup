@@ -1,6 +1,6 @@
 services:
-  wordpress-back-enhanced:
-    image: wordpress-backup-enhanced:dev
+  docker-database-volume-backup:
+    image: docker-database-volume-backup:dev
     environment:
       - TZ=Europe/Berlin # Define your timezone here
       # You can also use environment variable without docker secrets
@@ -10,6 +10,7 @@ services:
       - MYSQL_PASSWORD_FILE=/run/secrets/backup_mysql_password
       - MYSQL_DATABASE_FILE=/run/secrets/backup_mysql_database
       - BACKUP_ON_START=true
+      - BASIC_AUTH_USER=test
       - BASIC_AUTH_PASSWORD=test
     secrets:
       - backup_mysql_host
@@ -18,6 +19,7 @@ services:
       - backup_mysql_database
     volumes:
       - "./backups:/backups" # Map your volume here where to place backup files
+      - "C:/Users/saman/src/Ansari.Dev/volumes/mysql:/files:ro"
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
     ports:

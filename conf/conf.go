@@ -17,10 +17,11 @@ type AppConfig struct {
 	Cron              string `validate:"required"`
 	BackupOnStart     bool
 	BasicAuthPassword string
+	BasicAuthUser     string
 }
 
 func LoadConfig() AppConfig {
-	secretMap, err := readEnv([]string{"MYSQL_HOST", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_DATABASE", "BASIC_AUTH_PASSWORD"})
+	secretMap, err := readEnv([]string{"MYSQL_HOST", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_DATABASE", "BASIC_AUTH_USER", "BASIC_AUTH_PASSWORD"})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,6 +33,7 @@ func LoadConfig() AppConfig {
 		Database:          secretMap["MYSQL_DATABASE"],
 		Cron:              os.Getenv("BACKUP_CRON"),
 		BackupOnStart:     os.Getenv("BACKUP_ON_START") == "true",
+		BasicAuthUser:     secretMap["BASIC_AUTH_USER"],
 		BasicAuthPassword: secretMap["BASIC_AUTH_PASSWORD"],
 	}
 
@@ -85,4 +87,12 @@ func readFileAsString(filePath string) (string, error) {
 
 	// Convert content to string and return
 	return strings.TrimSpace(string(content)), nil
+}
+
+func GetBackupPath() string {
+	backups := os.Getenv("BACKUP_FOLDER")
+	if backups == "" {
+		backups = "/backups"
+	}
+	return backups
 }

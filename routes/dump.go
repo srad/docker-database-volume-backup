@@ -3,10 +3,12 @@ package routes
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/srad/wordpress-backup-enhanced/conf"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"time"
 )
@@ -18,39 +20,35 @@ type MySqlConfig struct {
 	Database string `validate:"required"`
 }
 
-type DumpInfo struct {
+type BackupInfo struct {
 	Filename string    `json:"filename"`
 	FileSize int64     `json:"fileSize"`
 	Created  time.Time `json:"created"`
 }
 
 func GetDumps(c echo.Context) error {
-	files, err := ListDumps()
+	dumpPath := path.Join(conf.GetBackupPath(), "dumps")
+	files, err := filterBackup(dumpPath, "mysqldump")
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	return c.JSON(http.StatusOK, files)
 }
 
-func ListDumps() ([]DumpInfo, error) {
-	backups := os.Getenv("BACKUP_FOLDER")
-	if backups == "" {
-		backups = "/backups"
-	}
-
-	entries, err := os.ReadDir(backups)
+func filterBackup(folder, filePrefix string) ([]BackupInfo, error) {
+	entries, err := os.ReadDir(folder)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var files []DumpInfo
+	var files []BackupInfo
 	for _, e := range entries {
 		if !e.IsDir() && strings.HasPrefix(e.Name(), "mysqldump") {
 			info, err := e.Info()
 			if err != nil {
 				return nil, err
 			}
-			files = append(files, DumpInfo{
+			files = append(files, BackupInfo{
 				Filename: e.Name(),
 				FileSize: info.Size(),
 				Created:  info.ModTime(),
@@ -64,7 +62,7 @@ func ListDumps() ([]DumpInfo, error) {
 func Mysqldump(config MySqlConfig) {
 	now := time.Now()
 	stamp := now.Format("2006_02_01_15_04_05")
-	commandString := fmt.Sprintf("mysqldump --host=\"%s\" --add-drop-table --no-tablespaces --user=\"%s\" --password=\"%s\" %s --single-transaction | bzip2 -c > \"/backups/mysqldump_%s.sql.bz2\"", config.Host, config.User, config.Password, config.Database, stamp)
+	commandString := fmt.Sprintf("mysqldump --host=\"%s\" --add-drop-table --no-tablespaces --user=\"%s\" --password=\"%s\" %s --single-transaction | bzip2 -c > \"/backups/dumps/mysqldump_%s.sql.bz2\"", config.Host, config.User, config.Password, config.Database, stamp)
 
 	cmd := exec.Command("bash", "-c", commandString)
 	stdout, err := cmd.Output()
@@ -95,4 +93,9 @@ func MysqlRestoreDump(file string, config MySqlConfig) {
 
 	// Print the output
 	log.Println(string(stdout))
+}
+
+func CreateDump(c echo.Context) error {
+	//Mysqldump()
+	return c.JSON(http.StatusOK, nil)
 }
