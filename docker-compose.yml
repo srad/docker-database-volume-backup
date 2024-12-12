@@ -1,0 +1,40 @@
+services:
+  wordpress-back-enhanced:
+    image: wordpress-backup-enhanced:dev
+    environment:
+      - TZ=Europe/Berlin # Define your timezone here
+      # You can also use environment variable without docker secrets
+      # (i.e. via MYSQL_HOST=...) but that is highly discouraged.
+      - MYSQL_HOST_FILE=/run/secrets/backup_mysql_host
+      - MYSQL_USER_FILE=/run/secrets/backup_mysql_user
+      - MYSQL_PASSWORD_FILE=/run/secrets/backup_mysql_password
+      - MYSQL_DATABASE_FILE=/run/secrets/backup_mysql_database
+      - BACKUP_ON_START=true
+      - BASIC_AUTH_PASSWORD=test
+    secrets:
+      - backup_mysql_host
+      - backup_mysql_user
+      - backup_mysql_password
+      - backup_mysql_database
+    volumes:
+      - "./backups:/backups" # Map your volume here where to place backup files
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    ports:
+      - "8080:8080"
+    networks:
+      - mysql-net
+
+networks:
+  mysql-net:
+    external: true
+
+secrets:
+  backup_mysql_host:
+    external: true
+  backup_mysql_user:
+    external: true
+  backup_mysql_password:
+    external: true
+  backup_mysql_database:
+    external: true
