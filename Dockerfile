@@ -11,10 +11,14 @@ LABEL maintainer="srad <ssedighi@posteo.de>"
 LABEL source="https://github.com/srad/docker-database-volume-backup"
 
 RUN apt update && apt upgrade -y
-RUN apt install mysql-client bzip2 wget -y
+RUN apt install mysql-client bzip2 sqlite3 wget build-essential libsqlite3-dev -y
 
 RUN wget -qO- https://go.dev/dl/go1.23.4.linux-amd64.tar.gz | tar xvz -C /usr/local
-RUN export PATH=$PATH:/usr/local/go/bin
+
+# Go paths
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/go
+ENV PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 
 # Set the working directory
 WORKDIR /app
@@ -23,13 +27,17 @@ WORKDIR /app
 COPY go.mod go.sum ./
 
 # Download dependencies
-RUN /usr/local/go/bin/go mod download
+RUN go mod download
 
 # Copy the rest of the application code
 COPY . .
 
+# Install swag tool
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN swag init
+
 # Build
-RUN CGO_ENABLED=0 GOOS=linux /usr/local/go/bin/go build -o /main
+RUN CGO_ENABLED=1 GOOS=linux go build -o /main
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
@@ -53,7 +61,9 @@ ENV BASIC_AUTH_PASSWORD_FILE=""
 ENV PORT="8080"
 
 ENV BACKUP_ON_START="true"
+ENV BACKUP_KEEP=5
 ENV BACKUP_CRON="@every 1h"
+ENV BACKUP_DATABASE="/backups/backup.db"
 
 RUN mkdir /backups
 RUN mkdir /backups/dumps

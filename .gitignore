@@ -33,3 +33,4 @@ backups/**
 public/dist
 node_modules
 ./public/**
+/docs/

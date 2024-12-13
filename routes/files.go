@@ -1,46 +1,25 @@
 package routes
 
 import (
-	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/srad/wordpress-backup-enhanced/conf"
-	"log"
+	"github.com/srad/docker-database-volume-backup/services"
 	"net/http"
-	"os/exec"
-	"path"
-	"time"
 )
 
-func CreateFiles(c echo.Context) error {
-	ZipVolume()
-	return c.JSON(http.StatusOK, nil)
-}
-
+// GetFiles godoc
+// @Summary Get list of backup files
+// @Description Retrieves a list of all backup files from the backup directory.
+// @Tags Backup Files
+// @Accept json
+// @Produce json
+// @Success 200 {array} []string "List of backup files"
+// @Failure 400 {object} HTTPError "Bad Request - Unable to retrieve backup files"
+// @Failure 500 {object} HTTPError "Internal Server Error"
+// @Router /files [get]
 func GetFiles(c echo.Context) error {
-	filePath := path.Join(conf.GetBackupPath(), "files")
-	files, err := filterBackup(filePath, "volume")
+	files, err := services.GetBackupFiles()
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	return c.JSON(http.StatusOK, files)
-}
-
-func ZipVolume() {
-	sourceFolder := "/files"
-	now := time.Now()
-	stamp := now.Format("2006_02_01_15_04_05")
-	commandString := fmt.Sprintf("tar czf \"/backups/files/volume_%s.tar.gz\" %s", stamp, sourceFolder)
-
-	cmd := exec.Command("bash", "-c", commandString)
-	stdout, err := cmd.Output()
-
-	if err != nil {
-		log.Printf("Error running command: %s, %s", commandString, err.Error())
-		return
-	}
-
-	log.Println("volumes backup completed")
-
-	// Print the output
-	log.Println(string(stdout))
 }

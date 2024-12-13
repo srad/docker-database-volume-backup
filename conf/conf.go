@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -18,10 +19,20 @@ type AppConfig struct {
 	BackupOnStart     bool
 	BasicAuthPassword string
 	BasicAuthUser     string
+	DatabaseFilePath  string `validate:"required"`
+}
+
+func (config *AppConfig) ToMySqlConfig() MySqlConfig {
+	return MySqlConfig{
+		Host:     config.Host,
+		User:     config.User,
+		Password: config.Password,
+		Database: config.Database,
+	}
 }
 
 func LoadConfig() AppConfig {
-	secretMap, err := readEnv([]string{"MYSQL_HOST", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_DATABASE", "BASIC_AUTH_USER", "BASIC_AUTH_PASSWORD"})
+	secretMap, err := readEnv([]string{"MYSQL_HOST", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_DATABASE", "BASIC_AUTH_USER", "BASIC_AUTH_PASSWORD", "BACKUP_DATABASE"})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,6 +46,7 @@ func LoadConfig() AppConfig {
 		BackupOnStart:     os.Getenv("BACKUP_ON_START") == "true",
 		BasicAuthUser:     secretMap["BASIC_AUTH_USER"],
 		BasicAuthPassword: secretMap["BASIC_AUTH_PASSWORD"],
+		DatabaseFilePath:  secretMap["BACKUP_DATABASE"],
 	}
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
@@ -95,4 +107,12 @@ func GetBackupPath() string {
 		backups = "/backups"
 	}
 	return backups
+}
+
+func GetBackupFilesPath() string {
+	return path.Join(GetBackupPath(), "files")
+}
+
+func GetVolumeMapping() string {
+	return "/files"
 }

@@ -19,7 +19,7 @@ services:
       - backup_mysql_database
     volumes:
       - "./backups:/backups" # Map your volume here where to place backup files
-      - "C:/Users/saman/src/Ansari.Dev/volumes/mysql:/files:ro"
+      - "C:/Users/saman/src/Ansari.Dev/volumes/mysql:/files"
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
     ports:

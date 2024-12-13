@@ -2,29 +2,38 @@ package routes
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/robfig/cron/v3"
+	"github.com/srad/docker-database-volume-backup/services"
 	"net/http"
 	"time"
 )
 
-type CronEntry struct {
-	Id   cron.EntryID `json:"id"`
-	Next time.Time    `json:"next"`
+type CronJobDto struct {
+	Id   int       `json:"id"`
+	Next time.Time `json:"next"`
 }
 
-func GetCron(c echo.Context, cron *cron.Cron) error {
-	return c.JSON(http.StatusOK, getCronJobs(cron))
-}
+// GetCron godoc
+// @Summary Get list of cron jobs
+// @Description Retrieves a list of all active cron jobs.
+// @Tags Cron Jobs
+// @Accept json
+// @Produce json
+// @Success 200 {array} []CronJobDto "List of cron jobs"
+// @Failure 500 {object} HTTPError "Internal Server Error"
+// @Router /cron [get]
+func GetCron(c echo.Context) error {
+	jobs, err := services.GetCronJobs()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 
-func getCronJobs(c *cron.Cron) []CronEntry {
-	entries := c.Entries()
-	var result = make([]CronEntry, len(entries))
-	for _, entry := range entries {
-		result = append(result, CronEntry{
-			Id:   entry.ID,
-			Next: entry.Next,
+	var jobList []CronJobDto
+	for _, job := range jobs {
+		jobList = append(jobList, CronJobDto{
+			Id:   int(job.Id),
+			Next: job.Next,
 		})
 	}
 
-	return result
+	return c.JSON(http.StatusOK, jobList)
 }
