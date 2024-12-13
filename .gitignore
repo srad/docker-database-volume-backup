@@ -34,3 +34,4 @@ public/dist
 node_modules
 ./public/**
 /docs/
+docker-compose.local.yml
