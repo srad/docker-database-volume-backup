@@ -9,17 +9,19 @@ services:
       - MYSQL_USER_FILE=/run/secrets/backup_mysql_user
       - MYSQL_PASSWORD_FILE=/run/secrets/backup_mysql_password
       - MYSQL_DATABASE_FILE=/run/secrets/backup_mysql_database
-      - BACKUP_ON_START=true
       - BASIC_AUTH_USER=test
       - BASIC_AUTH_PASSWORD=test
+      - BACKUP_ON_START=true
+      - BACKUP_CRON=@every 1h
+      - BACKUP_KEEP=5
     secrets:
       - backup_mysql_host
       - backup_mysql_user
       - backup_mysql_password
       - backup_mysql_database
     volumes:
-      - "./backups:/backups" # Map your volume here where to place backup files
-      - "C:/Users/saman/src/Ansari.Dev/volumes/mysql:/files"
+      - "./backups:/backups" # Backups will be stored here
+      - "<path_to_your_volume>:/files" # Which filepath to backup
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
     ports:
